@@ -1,0 +1,43 @@
+# Hidden tooling, downloaded board packages, and editor state.
+.*/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Build output, dependency downloads, and caches at any depth.
+build/
+build-*/
+cmake-build-*/
+dist/
+out/
+target/
+node_modules/
+cache/
+coverage/
+__pycache__/
+*.py[cod]
+
+# Device backups, runtime data, logs, and generated audio/previews.
+backups/
+data/
+logs/
+*.log
+*.bin
+*.elf
+*.hex
+*.uf2
+*.map
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.pcm
+*.wav
+*.rgb565
+*.zip
+*.tar
+*.tar.gz
+*.tgz
