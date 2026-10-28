@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
+python3 "$ROUND_ROOT/tests/test_rollout.py"
 node "$ROUND_ROOT/../../wonder-audio/scripts/export-embedded.cjs" "$ROUND_ROOT/.build/assets"
 mkdir -p "$ROUND_ROOT/.build/preview"
 flags=(-std=c++17 -Wall -Wextra -Werror -O2)

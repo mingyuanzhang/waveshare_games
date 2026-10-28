@@ -33,7 +33,7 @@ bash waveshare/team_lab/scripts/run.sh
 
 The installer automatically selects the USB serial port when exactly one is available. Connect the powered-on board with a USB data cable. If no port appears, reconnect USB and check the cable. If several ports appear, pass the board's path explicitly, for example `bash waveshare/team_lab/scripts/run.sh /dev/cu.usbmodem1101`. A supplied path that has disappeared reports the available ports instead of selecting a different device.
 
-This runs native checks, builds the firmware, identifies the connected board, and saves **both existing Echo application slots, boot information, and settings** before uploading. The snapshot is `waveshare/backups/<mac>-before-round-wonders.bin`, 6,356,992 bytes, with a SHA-256 sidecar. Upload stops if its size or checksum is wrong. The remaining data partition is untouched. Backups are local, ignored files: retain them separately if moving workspaces.
+This runs native checks, builds the firmware, identifies the connected board, and saves **both existing Echo application slots, boot information, and settings** before uploading. The snapshot is `waveshare/backups/<mac>-before-round-wonders.bin`, 6,356,992 bytes, with a SHA-256 sidecar. Upload stops if its size or checksum is wrong. The 0.3.0 installer additionally saves a full 16 MiB snapshot as `<mac>-before-round-wonders-v030-full.bin` before expanding the application partition. Restoration writes that full snapshot first, then overlays the preserved Echo prefix. Keep both snapshots and their checksums. Backups are local, ignored files: retain them separately if moving workspaces.
 
 Restore the saved Echo firmware and settings:
 
@@ -47,7 +47,7 @@ Use the actual USB port if it changes. Close serial monitors before upload. A bo
 
 ## Music and memory
 
-[Wonder Audio's exporter](../../wonder-audio/scripts/export-embedded.cjs) renders the existing six accompaniments and 126 reusable instrument samples at build time, compressing them into independent IMA ADPCM blocks. The binary also contains 4,752 cue variants covering every harmonic entrance phase, with 53,396 scored notes. These are generated from the same harmony, swing, expression, and discovery gestures as the browser player.
+[Wonder Audio's exporter](../../wonder-audio/scripts/export-embedded.cjs) renders the eleven approved accompaniments and 114 reusable instrument samples at build time. The 24 kHz mono ADPCM binary includes 17,424 cue variants and 149,590 scored notes. Theme order matches the browsers: Default, Brubeck, Metal, Sky Castle, Platformer, Tchaikovsky, Moonlight Ballad, Bounce, Gaoshan Liushui (高山流水), Bach, Chopin. Archived and rejected themes are excluded. Native labels use Latin glyphs.
 
 At runtime the accompaniment streams from memory-mapped flash. The active instrument bank is decoded into PSRAM; a second bank lets music continue while the next style loads. Decoding is divided into small batches with a roughly 5 ms work budget per loop iteration, followed by a short fade between styles. Its exact loading time requires a device measurement. The sampler interpolates pitches, preserves velocity choices and gates, adds a small shared room, and limits peaks. A discovery gets its full melody whenever one of the three foreground slots is free. Only actual contenders on the same entrance can reassign a pending reservation, favoring copies that have waited longest, including copies of the same shape. Melodies already playing finish uninterrupted. Other discoveries give short accents at about half the opening note's amplitude, with up to 320 ms of scored note duration and a short release. Simultaneous accents of the same shape share a sound. Foreground turns remain shared fairly among all 36 shapes.
 
@@ -55,16 +55,16 @@ Audio has its own core-0 task and a three-block I2S DMA buffer. Visual entrances
 
 | Resource | Built or allocated size |
 | --- | --- |
-| Flash audio and scores | 5,487,652 bytes (5.23 MiB) |
-| Application partition | 6 MiB, merged from Echo's two 3 MiB slots |
-| Firmware, including audio | About 5.69 MiB; see current build output |
-| Largest decoded bank | 2,488,320 bytes (2.37 MiB) |
-| Two reserved banks | 4,976,640 bytes |
+| Flash audio and scores | 8,297,000 bytes (7.91 MiB) |
+| Application partition | 10 MiB within the existing 16 MiB flash |
+| Firmware, including audio | 8,773,302 bytes (83% of the application partition) |
+| Largest decoded bank | 2,609,280 bytes (2.49 MiB) |
+| Two reserved banks | 5,218,560 bytes |
 | Two RGB565 frame buffers in PSRAM | 518,400 bytes |
 | Internal DMA display strip | 28,800 bytes |
 | Speaker stream | 24 kHz, 16-bit mono |
 
-The original FAT partition remains at `0x610000`, but the game never mounts it. This uses a factory application partition and USB flashing; OTA is not implemented. Mono compression, sampled pitch shifts, and a smaller room make the sound different from the browser version. Rock's noisier backing has the lowest measured ADPCM signal-to-noise ratio, about 28.6 dB; other backing loops measure about 37.8–46.5 dB. Individual short samples can measure lower. These numerical checks establish signal integrity; speaker loudness, tonal balance, distortion, and perceived quality still need listening on the board. The piano score and driver notices ship with the project.
+The unused FAT partition now starts at `0xa10000`; the expanded application occupies part of the old data region. The installer requires a verified full-flash backup before upload, and the game never mounts FAT. This uses a factory application partition and USB flashing; OTA is not implemented. Mono compression, sampled pitch shifts, and a smaller room make the sound different from the browser version. Backing-loop signal-to-noise estimates are recorded per track in `.build/assets/audio-assets.json`. Individual short samples can measure lower. These numerical checks establish signal integrity; speaker loudness, tonal balance, distortion, and perceived quality still need listening on the board. The piano score and driver notices ship with the project.
 
 ## Checks and previews
 
@@ -74,11 +74,11 @@ bash waveshare/team_lab/scripts/build.sh
 python3 waveshare/team_lab/scripts/check_speed.py /dev/cu.usbmodem1101
 ```
 
-Native checks exercise click/double-click/hold handling, radial physics and wrapping, ladders and ledges, ten simulated minutes of bounded movement, the 36-shape inventory, outward/inward geometry, framebuffer guards, matching JS/C++ ADPCM decoding, all six music styles, mute fades, stale-cue rejection, smooth bank transitions, free-slot melody playback, same-beat competition without interrupting audible phrases, accent signal levels, and foreground fairness across 36 copies. Preview generation uses Python with Pillow; the exporter uses Node with no npm dependencies. Output includes PNGs and six five-second WAV clips under `.build/preview/`; `discoveries.png` shows the actual native renderer.
+Native checks exercise click/double-click/hold handling, radial physics and wrapping, ladders and ledges, ten simulated minutes of bounded movement, the 36-shape inventory, outward/inward geometry, framebuffer guards, matching JS/C++ ADPCM decoding, all eleven music styles, mute fades, stale-cue rejection, smooth bank transitions, free-slot melody playback, same-beat competition without interrupting audible phrases, accent signal levels, and foreground fairness across 36 copies. Preview generation uses Python with Pillow; the exporter uses Node with no npm dependencies. Output includes PNGs and eleven five-second WAV clips under `.build/preview/`; `discoveries.png` shows the actual native renderer.
 
-The device benchmark runs a crowded scene for 45 seconds and cycles the six music styles, then restores the user's scene. It captures average/max/p95 frame rendering plus LCD transfer time, effective frame rate, frames over 40 ms, mixer time, underruns, late cues, and remaining memory in `.build/benchmark-device.*`. These figures include real LCD transfers only when run on the board. The earlier Echo benchmark does not establish this game's frame rate.
+The device benchmark runs a crowded scene for 74.5 seconds and cycles all eleven music styles, then restores the user's scene. It captures average/max/p95 frame rendering plus LCD transfer time, effective frame rate, frames over 40 ms, mixer time, underruns, late cues, and remaining memory in `.build/benchmark-device.*`. These figures include real LCD transfers only when run on the board. The earlier Echo benchmark does not establish this game's frame rate.
 
-As of October 23, 2026, native checks and the ESP32-S3 build have passed. Installation and physical performance/audio checks are pending: this Codex session sees `/dev/cu.usbmodem1101`, but opening it returns `Operation not permitted`. Echo has not been overwritten from this session.
+The 0.3.0 native checks and ESP32-S3 build passed on October 28, 2026. Hardware installation and physical performance/audio checks remain separate; no device was flashed during this rollout.
 
 Serial commands are `S` for shape, `T` for music, `M` for mute, `?` for statistics, and `B` for the benchmark. Use `bash waveshare/team_lab/scripts/monitor.sh /dev/cu.usbmodem1101` to inspect boot diagnostics, including codec acknowledgement, audio readiness, and memory.
 
@@ -87,3 +87,5 @@ Serial commands are `S` for shape, `T` for music, `M` for mute, `?` for statisti
 `RoundWorld` and `RoundRenderer` implement the radial simulation and artwork. `Music` is the hardware-independent sampler and conductor; `DeviceAudio` owns the codec, I2S, audio task, and background bank loading. `Controls` handles the physical button. `RoundDevice` connects touch, physics, audio-clock cues, and display transfer. Staging reuses Echo's tested rasterizer and DMA synchronization plus the installed official display/touch drivers. The pinned ES8311 driver and its license are in `vendor/es8311/`.
 
 The browser games retain their existing rectangular worlds. Their generated Wonder Audio distributions include the new instrument-export API; their gameplay is unchanged.
+
+The 0.3.0 rollout changes repository source and build assets. Hardware flashing and physical listening are separate steps; host tests do not establish on-device timing or speaker quality.

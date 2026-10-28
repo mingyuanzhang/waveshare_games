@@ -21,7 +21,7 @@ bool Bank::load(const uint8_t* blob,unsigned budget){
 static double groove(double beat,float swing){const double whole=std::floor(beat),part=beat-whole;return whole+(part<.5?part*2*swing:swing+(part-.5)*2*(1-swing));}
 static double straight(double beat,float swing){const double whole=std::floor(beat),part=beat-whole;return whole+(part<swing?part/(2*swing):.5+(part-swing)/(2*(1-swing)));}
 MusicCue next_entrance(unsigned theme,uint64_t origin,uint64_t earliest,uint32_t epoch){
-  const auto& t=kThemes[theme%6];const double position=straight((static_cast<double>(earliest)-origin)*t.bpm/(60*kAudioRate),t.swing);
+  const auto& t=kThemes[theme%kThemeCount];const double position=straight((static_cast<double>(earliest)-origin)*t.bpm/(60*kAudioRate),t.swing);
   const double beat=std::max(0.0,std::ceil(position/t.step-1e-10)*t.step);
   MusicCue cue;cue.beat=beat;cue.when=origin+static_cast<uint64_t>(std::llround(groove(beat,t.swing)*60*kAudioRate/t.bpm));cue.phase=static_cast<unsigned>(std::llround(beat/t.step))%t.phases;cue.epoch=epoch;return cue;
 }

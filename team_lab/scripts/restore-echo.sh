@@ -27,6 +27,16 @@ import pathlib,sys
 if pathlib.Path(sys.argv[1]).stat().st_size!=6356992:raise SystemExit('Incomplete Echo snapshot; restore cancelled')
 PY
   (cd "$WAVESHARE_ROOT/backups" && shasum -a 256 -c "$device_mac-before-round-wonders.bin.sha256")
+  # Restore the old data region before overlaying the preserved Echo image.
+  full_backup="$WAVESHARE_ROOT/backups/$device_mac-before-round-wonders-v030-full.bin"
+  if [ -f "$full_backup" ]; then
+    python3 - "$full_backup" <<'CHECK'
+import pathlib,sys
+if pathlib.Path(sys.argv[1]).stat().st_size!=16777216:raise SystemExit('Incomplete full-flash snapshot; restore cancelled')
+CHECK
+    (cd "$WAVESHARE_ROOT/backups" && shasum -a 256 -c "$device_mac-before-round-wonders-v030-full.bin.sha256")
+    "$esptool" --chip esp32s3 --port "$port" --baud 460800 write_flash 0 "$full_backup"
+  fi
   "$esptool" --chip esp32s3 --port "$port" --baud 460800 write_flash 0 "$backup"
 else
   echo 'No device-specific Echo snapshot; rebuilding Echo from its preserved source.'

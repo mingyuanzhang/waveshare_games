@@ -70,7 +70,7 @@ bool DeviceAudio::reveal(unsigned shape,unsigned uid,unsigned cycle,MusicCue& cu
   Command command;command.shape=shape;command.uid=uid;command.cycle=cycle;command.cue=cue;
   return xQueueSend(queue_,&command,0)==pdTRUE;
 }
-void DeviceAudio::next_theme(){desired_=(desired_+1)%6;}
+void DeviceAudio::next_theme(){desired_=(desired_+1)%kThemeCount;}
 bool DeviceAudio::toggle_mute(bool& muted){
   Command command;command.kind=2;command.mute=!desiredMuted_;
   if(xQueueSend(queue_,&command,0)!=pdTRUE)return false;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture a 45-second crowded-world and six-theme benchmark using standard Python."""
+"""Capture a crowded-world benchmark across all approved themes using standard Python."""
 import argparse
 import json
 import os
@@ -26,7 +26,8 @@ def main():
         termios.tcsetattr(fd, termios.TCSANOW, attributes)
         termios.tcflush(fd, termios.TCIFLUSH)
         started = False
-        deadline = time.monotonic() + 65
+        deadline = time.monotonic() + 120
+        duration_ms = None
         next_request = 0
         buffer = b''
         with (output / 'benchmark-device.txt').open('w') as capture:
@@ -48,11 +49,13 @@ def main():
                     capture.flush()
                     if 'BENCH BEGIN' in text:
                         started = True
+                        duration_ms = int(re.search(r'duration=(\d+)ms', text).group(1))
+                        deadline = time.monotonic() + duration_ms / 1000 + 20
                     if started and 'BENCH END' in text:
                         values = {k: int(v) for k, v in re.findall(r'(\w+)=(\d+)', text)}
                         (output / 'benchmark-device.json').write_text(json.dumps({
-                            'platform': 'esp32s3', 'duration_ms': 45000,
-                            'average_fps': values['frames'] / 45, 'metrics': values,
+                            'platform': 'esp32s3', 'duration_ms': duration_ms,
+                            'average_fps': values['frames'] * 1000 / duration_ms, 'metrics': values,
                         }, indent=2) + '\n')
                         return
             raise RuntimeError('Device benchmark did not complete; transcript retained, no new successful result saved')

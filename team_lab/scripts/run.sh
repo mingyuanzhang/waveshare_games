@@ -22,21 +22,36 @@ if not match:raise SystemExit('Cannot identify board; upload cancelled')
 print(match.group(1).replace(':','').lower())
 PY
 )"
+# The expanded application overlaps part of the former FAT area. Preserve all
+# flash before any upload, while keeping an older Echo-prefix snapshot intact.
 backup="$WAVESHARE_ROOT/backups/$device_mac-before-round-wonders.bin"
+full_backup="$WAVESHARE_ROOT/backups/$device_mac-before-round-wonders-v030-full.bin"
 mkdir -p "$WAVESHARE_ROOT/backups"
-if [ ! -f "$backup" ]; then
-  "$esptool" --chip esp32s3 --port "$port" --baud 460800 read_flash 0 6356992 "$backup.partial"
-  python3 - "$backup.partial" <<'PY'
+if [ ! -f "$full_backup" ]; then
+  "$esptool" --chip esp32s3 --port "$port" --baud 460800 read_flash 0 16777216 "$full_backup.partial"
+  python3 - "$full_backup.partial" <<'CHECK'
 import pathlib,sys
-if pathlib.Path(sys.argv[1]).stat().st_size!=6356992:raise SystemExit('Incomplete Echo backup; upload cancelled')
-PY
-  mv "$backup.partial" "$backup"
+if pathlib.Path(sys.argv[1]).stat().st_size!=16777216:raise SystemExit('Incomplete full-flash backup; upload cancelled')
+CHECK
+  mv "$full_backup.partial" "$full_backup"
+  (cd "$WAVESHARE_ROOT/backups" && shasum -a 256 "$device_mac-before-round-wonders-v030-full.bin" > "$device_mac-before-round-wonders-v030-full.bin.sha256")
+fi
+python3 - "$full_backup" <<'CHECK'
+import pathlib,sys
+if pathlib.Path(sys.argv[1]).stat().st_size!=16777216:raise SystemExit('Full-flash backup has wrong size; upload cancelled')
+CHECK
+(cd "$WAVESHARE_ROOT/backups" && shasum -a 256 -c "$device_mac-before-round-wonders-v030-full.bin.sha256")
+if [ ! -f "$backup" ]; then
+  python3 - "$full_backup" "$backup" <<'CHECK'
+import pathlib,sys
+pathlib.Path(sys.argv[2]).write_bytes(pathlib.Path(sys.argv[1]).read_bytes()[:6356992])
+CHECK
   (cd "$WAVESHARE_ROOT/backups" && shasum -a 256 "$device_mac-before-round-wonders.bin" > "$device_mac-before-round-wonders.bin.sha256")
 fi
-python3 - "$backup" <<'PY'
+python3 - "$backup" <<'CHECK'
 import pathlib,sys
 if pathlib.Path(sys.argv[1]).stat().st_size!=6356992:raise SystemExit('Existing Echo backup has wrong size; upload cancelled')
-PY
+CHECK
 (cd "$WAVESHARE_ROOT/backups" && shasum -a 256 -c "$device_mac-before-round-wonders.bin.sha256")
 waveshare_cli upload --fqbn "$WAVESHARE_FQBN" --port "$port" --input-dir "$ROUND_ROOT/.build/out" "$ROUND_ROOT/.build/sketch/round_wonders"
 echo 'Round Wonders installed. Action/BOOT: click changes shape, double-click changes style, hold 1 second toggles sound. Tap to place.'

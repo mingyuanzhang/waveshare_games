@@ -62,7 +62,7 @@ void begin_benchmark(uint64_t now){
     world.selected=shape;for(unsigned attempt=0;attempt<12;attempt++)if(world.place(position((copy*6+shape)*2.39996f+attempt*.15f,35+copy*23)))break;
   }
   world.selected=0;for(auto& t:world.tokens)if(t.active)t.timer=.15f;
-  frames=overBudget=maximum=renderMaximum=transferMaximum=0;totalUs=0;std::fill(histogram,histogram+128,0);benchmark=true;benchStart=now;Serial.println("[round] BENCH BEGIN duration=45000ms people=24 tokens=36 audio=on");
+  frames=overBudget=maximum=renderMaximum=transferMaximum=0;totalUs=0;std::fill(histogram,histogram+128,0);benchmark=true;benchStart=now;Serial.printf("[round] BENCH BEGIN duration=%ums people=24 tokens=36 audio=on\n",kThemeCount*6500+3000);
 }
 }
 void round_wonders_setup(){
@@ -94,8 +94,8 @@ void round_wonders_loop(){
   if(now-lastFrameMs>=40){present(sound,now);lastFrameMs=now;}
   if(now-lastStatsMs>=5000){stats("STATS");lastStatsMs=now;}
   if(benchmark){
-    const unsigned target=std::min(5U,static_cast<unsigned>((now-benchStart)/6500));if(audioReady&&audio.desired_theme()!=target)audio.next_theme();
-    if(now-benchStart>=45000){stats("BENCH END");world=savedWorld;benchmark=false;}
+    const unsigned target=std::min(kThemeCount-1,static_cast<unsigned>((now-benchStart)/6500));if(audioReady&&audio.desired_theme()!=target)audio.next_theme();
+    if(now-benchStart>=kThemeCount*6500+3000){stats("BENCH END");world=savedWorld;benchmark=false;}
   }
   delay(1);
 }

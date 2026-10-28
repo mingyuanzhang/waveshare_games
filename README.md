@@ -4,7 +4,7 @@ The first prototype is a touch focus timer with 5, 25, and 50 minute presets, a 
 
 A separate [Echo game experiment](echo_game/README.md) lives in `echo_game/`, with its own firmware, build scripts, and tests. It includes all 25 rooms from the browser game, a paged room selector, directional visual echoes, touch aiming, movement through the physical BOOT button, and saved best scores. It shares the installed tools and flash backups with the timer. Its `scripts/check-speed.sh` uploads the game and runs a responsiveness check on the board.
 
-[Round Wonders](team_lab/README.md) adapts TeamLab 2D into a radial world with tiny touch-placed geometry and all six Wonder Audio music styles. It runs from internal flash without a microSD card. BOOT clicks select shape and music, leaving the screen for the people and discoveries. Its installer backs up Echo before replacement and includes an Echo restoration command.
+[Round Wonders](team_lab/README.md) adapts TeamLab 2D into a radial world with tiny touch-placed geometry and all eleven approved Wonder Audio music styles. It runs from internal flash without a microSD card. BOOT clicks select shape and music, leaving the screen for the people and discoveries. Its installer backs up Echo before replacement and includes an Echo restoration command.
 
 ## Run the prototype
 

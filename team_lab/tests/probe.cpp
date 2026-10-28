@@ -68,7 +68,7 @@ static void decoder_test(){
 static void render_until(Music& mixer,uint64_t end){int16_t block[256];while(mixer.produced<end)mixer.render(block,static_cast<unsigned>(std::min<uint64_t>(256,end-mixer.produced)));}
 static void music_test(const std::vector<uint8_t>& blob,const std::string& directory){
  assert(blob.size()==kAssetBytes);std::vector<int16_t> memory(kBankSamples);Bank bank;bank.memory=memory.data();Music mixer;
- for(unsigned theme=0;theme<6;theme++){
+ for(unsigned theme=0;theme<kThemeCount;theme++){
   bank.begin(theme);while(!bank.load(blob.data())){}assert(bank.used<=kBankSamples);mixer.initialize(blob.data(),&bank);
   auto cue=next_entrance(theme,0,512,mixer.epoch);for(unsigned id=0;id<6;id++)assert(mixer.schedule(id,id+1,1,cue));assert(mixer.phrases==3);
   int16_t block[256];int peak=0;double power=0;std::ofstream wav(directory+"/theme-"+std::to_string(theme)+".pcm",std::ios::binary);
@@ -111,15 +111,15 @@ static void music_test(const std::vector<uint8_t>& blob,const std::string& direc
   int16_t block[256];const auto end=mixer.produced+static_cast<uint64_t>(16*60*24000/84);while(mixer.produced<end)mixer.render(block,256);
  }
  assert(std::all_of(heard,heard+36,[](bool n){return n;}));assert(mixer.late==0);
- std::vector<int16_t> otherMemory(kBankSamples);Bank other;other.memory=otherMemory.data();other.begin(5);while(!other.load(blob.data())){}
+ std::vector<int16_t> otherMemory(kBankSamples);Bank other;other.memory=otherMemory.data();other.begin(kThemeCount-1);while(!other.load(blob.data())){}
  const auto oldEpoch=mixer.epoch,before=mixer.theme;const auto produced=mixer.produced;
  const auto stale=next_entrance(before,mixer.origin,produced+24000,oldEpoch);
  mixer.transition(&other);assert(mixer.theme==before&&mixer.epoch==oldEpoch);
  int16_t block[1024];mixer.render(block,1024);
- assert(mixer.theme==5&&mixer.active_bank()==&other&&mixer.epoch==oldEpoch+1);
+ assert(mixer.theme==kThemeCount-1&&mixer.active_bank()==&other&&mixer.epoch==oldEpoch+1);
  assert(mixer.origin>produced&&mixer.origin<produced+1024);
  assert(!mixer.schedule(0,1,1,stale));
- const auto fresh=next_entrance(5,mixer.origin,mixer.produced+512,mixer.epoch);assert(mixer.schedule(0,1,1,fresh));
+ const auto fresh=next_entrance(kThemeCount-1,mixer.origin,mixer.produced+512,mixer.epoch);assert(mixer.schedule(0,1,1,fresh));
 }
 static void previews(const std::string& directory){
  constexpr unsigned count=360*360;std::vector<uint16_t> background(count),guarded(count+64,0xf81f);auto* pixels=guarded.data()+32;
@@ -132,4 +132,4 @@ static void previews(const std::string& directory){
  }
  world=RoundWorld{};for(unsigned shape=0;shape<6;shape++){Reveal reveal={static_cast<uint8_t>(shape),static_cast<uint16_t>(shape+1),1,position(shape*kTau/6,125)};world.release(reveal,0,1);}renderer.draw(world,pixels,background.data(),48000);save("all-six");
 }
-int main(int argc,char** argv){assert(argc==3);controls_test();world_test();decoder_test();const auto blob=load(argv[1]);music_test(blob,argv[2]);previews(argv[2]);std::puts("[native] Controls, radial physics, inventory, rendering bounds, ADPCM compatibility, six themes, theme transitions, and 36-copy foreground fairness passed.");}
+int main(int argc,char** argv){assert(argc==3);controls_test();world_test();decoder_test();const auto blob=load(argv[1]);music_test(blob,argv[2]);previews(argv[2]);std::puts("[native] Controls, radial physics, inventory, rendering bounds, ADPCM compatibility, all approved themes, theme transitions, and 36-copy foreground fairness passed.");}
